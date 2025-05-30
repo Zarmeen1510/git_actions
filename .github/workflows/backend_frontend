@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch: # Optional: allows manual run from GitHub UI
 
 jobs:
   deploy:
@@ -37,6 +38,11 @@ jobs:
         working-directory: ./server
         run: npm install
 
+      # OPTIONAL: You can also add backend build/test here if needed
+      # - name: Build backend
+      #   working-directory: ./server
+      #   run: npm run build
+
       # DEPLOY TO SERVER USING SCP
       - name: Deploy to Server
         uses: appleboy/scp-action@v0.1.7
@@ -45,5 +51,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
-          source: "./client/build/*,./server/*"
+          source: |
+            client/build/
+            server/
           target: "/home/${{ secrets.SERVER_USER }}/deploy-folder"
