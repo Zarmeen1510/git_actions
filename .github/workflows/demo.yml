@@ -11,30 +11,48 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout Repository
-        uses: actions/checkout@v2
+      - name: 🧾 Checkout Repository
+        uses: actions/checkout@v3
 
-      # Setup Node.js
       - name: 🔧 Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      # Install and Build Frontend (React)
+      # ✅ Check and Install Frontend Dependencies
       - name: 📦 Install Frontend Dependencies
         working-directory: ./client
-        run: npm install
+        run: |
+          if [ -f package.json ]; then
+            npm install
+          else
+            echo "No package.json found in ./client"
+            exit 1
+          fi
 
+      # ✅ Build Frontend
       - name: 🛠️ Build Frontend
         working-directory: ./client
-        run: npm run build
+        run: |
+          if [ -f package.json ]; then
+            npm run build
+          else
+            echo "No package.json found in ./client"
+            exit 1
+          fi
 
-      # Install Backend Dependencies
+      # ✅ Check and Install Backend Dependencies
       - name: 📦 Install Backend Dependencies
         working-directory: ./server
-        run: npm install
+        run: |
+          if [ -f package.json ]; then
+            npm install
+          else
+            echo "No package.json found in ./server"
+            exit 1
+          fi
 
-      # Deploy to VPS via SCP
+      # ✅ Deploy via SCP
       - name: 🚀 Deploy via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -42,10 +60,12 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
-          source: "client/build/*,server/*"
+          source: |
+            client/build/
+            server/
           target: "/home/${{ secrets.SERVER_USER }}/fullstack-app"
 
-      # Optional: Restart backend service with SSH
+      # ✅ Restart Backend (Optional)
       - name: 🔁 Restart Backend (Optional)
         uses: appleboy/ssh-action@v0.1.10
         with:
@@ -55,4 +75,4 @@ jobs:
           port: 22
           script: |
             cd /home/${{ secrets.SERVER_USER }}/fullstack-app/server
-            pm2 restart all || pm2 start index.js
+            pm2 restart app.js || npm start
