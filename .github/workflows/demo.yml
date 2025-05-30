@@ -1,4 +1,4 @@
-name: Fullstack Deployment
+name: Fullstack CI/CD Pipeline
 
 on:
   push:
@@ -6,73 +6,27 @@ on:
       - main
 
 jobs:
-  deploy:
-    name: Build and Deploy Frontend + Backend
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🧾 Checkout Repository
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
+      # --- FRONTEND BUILD ---
+      - name: Install Frontend Dependencies
+        working-directory: ./src/client
+        run: npm install
 
-      # ✅ Check and Install Frontend Dependencies
-      - name: 📦 Install Frontend Dependencies
-        working-directory: ./client
-        run: |
-          if [ -f package.json ]; then
-            npm install
-          else
-            echo "No package.json found in ./client"
-            exit 1
-          fi
+      - name: Build React App
+        working-directory: ./src/client
+        run: npm run build
 
-      # ✅ Build Frontend
-      - name: 🛠️ Build Frontend
-        working-directory: ./client
-        run: |
-          if [ -f package.json ]; then
-            npm run build
-          else
-            echo "No package.json found in ./client"
-            exit 1
-          fi
+      # --- BACKEND SETUP ---
+      - name: Install Backend Dependencies
+        working-directory: ./src/server
+        run: npm install
 
-      # ✅ Check and Install Backend Dependencies
-      - name: 📦 Install Backend Dependencies
-        working-directory: ./server
-        run: |
-          if [ -f package.json ]; then
-            npm install
-          else
-            echo "No package.json found in ./server"
-            exit 1
-          fi
-
-      # ✅ Deploy via SCP
-      - name: 🚀 Deploy via SCP
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: 22
-          source: |
-            client/build/
-            server/
-          target: "/home/${{ secrets.SERVER_USER }}/fullstack-app"
-
-      # ✅ Restart Backend (Optional)
-      - name: 🔁 Restart Backend (Optional)
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: 22
-          script: |
-            cd /home/${{ secrets.SERVER_USER }}/fullstack-app/server
-            pm2 restart app.js || npm start
+      # --- DEPLOYMENT PLACEHOLDER ---
+      - name: Deploy to Server or Hosting
+        run: echo "Deploy step goes here (e.g., to Render, Heroku, etc.)"
