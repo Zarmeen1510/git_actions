@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -12,6 +13,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      # Debug: Show folder structure to verify paths
+      - name: Print folder structure
+        run: ls -R
 
       # FRONTEND SETUP
       - name: Setup Node.js for frontend
@@ -45,5 +50,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
-          source: "./client/build/*,./server/*"
+          source: |
+            client/build/
+            server/
           target: "/home/${{ secrets.SERVER_USER }}/deploy-folder"
