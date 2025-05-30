@@ -1,16 +1,58 @@
-name:Super-Linter
+name: Fullstack Deployment
 
-on: push
+on:
+  push:
+    branches:
+      - main
 
 jobs:
-  super-lint:
-    name: Lint code base
-    runs-on:ubuntu-latest
-    steps: 
-      - name: Checkout code
+  deploy:
+    name: Build and Deploy Frontend + Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v2
-      - name: Run Super-Linter 
-        uses: gitHub/superlinter@v3
-        env:
-          DEFAULT_BRANCH: main
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Setup Node.js
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # Install and Build Frontend (React)
+      - name: 📦 Install Frontend Dependencies
+        working-directory: ./client
+        run: npm install
+
+      - name: 🛠️ Build Frontend
+        working-directory: ./client
+        run: npm run build
+
+      # Install Backend Dependencies
+      - name: 📦 Install Backend Dependencies
+        working-directory: ./server
+        run: npm install
+
+      # Deploy to VPS via SCP
+      - name: 🚀 Deploy via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          source: "client/build/*,server/*"
+          target: "/home/${{ secrets.SERVER_USER }}/fullstack-app"
+
+      # Optional: Restart backend service with SSH
+      - name: 🔁 Restart Backend (Optional)
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          script: |
+            cd /home/${{ secrets.SERVER_USER }}/fullstack-app/server
+            pm2 restart all || pm2 start index.js
